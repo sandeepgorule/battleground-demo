@@ -1,8 +1,18 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Battleground
 
 AI-judged "who would win" fights. User types two free-text fighters (e.g. "10 lions" vs "a very angry toaster"), hits Fight, gets an AI verdict + freshly generated matching character art for both, revealed Pokémon-style.
 
 Demo/proof-of-concept build — not production-hardened. Keep it simple.
+
+## Commands
+
+- `npm install` — install server deps (`@anthropic-ai/sdk`, `openai`, `zod`).
+- `vercel dev` — run locally (static files + `/api/fight`), reads `.env`. Opening the HTML files directly won't work since the client calls `/api/fight`.
+- No build, lint, or test tooling exists. Verify changes by running a real fight in the browser via `vercel dev` (each fight makes paid API calls and counts toward the 5/60s rate limit).
 
 ## Stack
 
@@ -11,7 +21,8 @@ Demo/proof-of-concept build — not production-hardened. Keep it simple.
 - **Backend**: Vercel Functions (`/api`) — Node.js runtime, `module.exports = (request, response) => {...}` style (`request.body` pre-parsed, `response.status().json()` helpers). Exists only to keep API keys server-side.
 - **Verdict AI**: Anthropic Claude API (`@anthropic-ai/sdk`).
 - **Art AI**: OpenAI Images API (`openai` package), model `gpt-image-2`.
-- **Storage**: browser `localStorage` only. No database, no accounts, no cross-device sync.
+- **Storage**: browser `localStorage` (BattleDex) and `sessionStorage` (last fight) only. No database, no accounts, no cross-device sync.
+- **Frontend JS is plain global scripts**, not ES modules: `storage.js` is loaded via `<script>` before `battle.js`/`battledex.js` in each HTML page, and its functions are called as globals. Keep that load order.
 
 ## Repo layout
 
@@ -44,6 +55,7 @@ battleground-demo/
 4. Client renders the VS reveal animation once the response lands, highlights the winning portrait (`winner` is `"A"` or `"B"`, mapped back to the correct side — deliberately not the fighter's text label, so identical/mirror matchups like "lion" vs "lion" aren't ambiguous).
 5. "Save to BattleDex" under each portrait stores `{ label, imageDataUrl }` into a `battledex` localStorage array via `storage.js`, capped at ~20 entries (oldest evicted first). Images are downscaled to 400x400 via canvas before storing — the full 1024x1024 base64 PNGs were tripping the localStorage quota after only 2-3 saves.
 6. `battledex.html` reads/renders that array in a grid. Personal to one browser, by design.
+7. **Last-fight recap**: each successful fight is written to `sessionStorage` (`battleground_lastFight`, full-size images + verdict + per-side `savedA`/`savedB` flags). BattleDex's "Last Fight" link goes to `index.html?recap=1`, which re-renders that result without re-fetching or re-persisting, and keeps already-saved buttons disabled.
 
 ## APIs used
 
@@ -67,6 +79,7 @@ battleground-demo/
 - **Rate limiting is in-memory and resets on cold start.** Known limitation, acceptable for a demo (see `ponytail:` comment in `api/fight.js`).
 - **Retry = re-run the whole fight from scratch.** No partial-failure state tracking (no separate "just retry the image that failed" logic).
 - **BattleDex has no outcome tracking** — just image + fighter label, capped collection with oldest-eviction, images downscaled to 400x400 before storage to stay well under localStorage quota. `saveToBattledex` also self-heals on `QuotaExceededError` by evicting further even below the 20-cap, in case a browser's real quota is unusually tight.
+- **Client and server duplicate some constants**: `MAX_FIGHTER_LENGTH` (80) and the user-facing error messages exist both in `api/fight.js` and `js/battle.js` (`ERROR_MESSAGES`, keyed by the server's `error` codes). Change both together. The client also has its own codes (`network_failed`, `bad_response`) for failures that never reach a JSON response, e.g. a platform timeout returning HTML.
 - **Always check context7 before writing/using any library API in this project** (Anthropic SDK, OpenAI SDK, Vercel Functions conventions, etc.) — don't rely on training-data memory of these APIs, they move fast and this project intentionally tracks current model/param names (e.g. `gpt-image-2`, `messages.parse`).
 
 ## Environment variables
