@@ -7,9 +7,24 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const MAX_FIGHTER_LENGTH = 80;
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
-// ponytail: no rate limiting — deferred to post-MVP per the project brief.
-// Every request makes three paid API calls, so add a limit before sharing widely.
+// ponytail: in-memory Map resets on cold start, fine for a demo; swap for a
+// shared store (Upstash/Redis) if this ever needs to survive across instances.
+const requestLog = new Map();
+
+function isAllowed(ip) {
+  const now = Date.now();
+  const recent = (requestLog.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX) {
+    requestLog.set(ip, recent);
+    return false;
+  }
+  recent.push(now);
+  requestLog.set(ip, recent);
+  return true;
+}
 
 const VerdictSchema = z.object({
   winner: z.enum(['A', 'B']),
@@ -54,6 +69,12 @@ async function getImage(fighter) {
 module.exports = async (request, response) => {
   if (request.method !== 'POST') {
     response.status(405).json({ error: 'method_not_allowed' });
+    return;
+  }
+
+  const ip = (request.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
+  if (!isAllowed(ip)) {
+    response.status(429).json({ error: 'rate_limited', message: "Whoa, slow down champ — catch your breath and try again in a bit." });
     return;
   }
 

@@ -27,13 +27,13 @@ HTML, CSS, and vanilla JS for the frontend. Vercel for hosting and a serverless 
 **Phase 3: Share-code sync.** Load your BattleDex on another device with a share code or link, without building login. This needs a small server-side store for each shared BattleDex.
 
 ## 5. Details decided so far
-- **Rate limiting**: deferred to post-MVP. Exact limits TBD.
+- **Rate limiting**: 5 fights per minute per IP, checked before any paid API call. Kept in memory, so it resets when the server restarts.
 - **Verdict format**: winner card with animation, plus written reasoning for the win.
 - **Character art**: one image per side. Group inputs (e.g. "10 cows vs 10 lions") still get one image per side, not one per unit.
 - **Image storage**: images downsized/compressed client-side (canvas resize to 400x400 + JPEG at 0.85 quality) before saving to localStorage, to stay under browser storage quota.
 
 ## 6. Constraints and risks
-- **Cost:** every fight makes three paid calls (one verdict, two images). With rate limiting deferred, nothing caps how many fights a visitor can run.
+- **Cost:** every fight makes three paid calls (one verdict, two images). The rate limit slows down a single visitor but doesn't cap total spending.
 - **Speed:** a fight takes about 60–75 seconds, almost all of it image generation. Image quality is set to `low` to keep this down.
 - **Free-text input:** people will try prompt injection and inappropriate fighters. The verdict prompt treats embedded instructions as just a weird fighter, and flagged image requests show a friendly error.
 
