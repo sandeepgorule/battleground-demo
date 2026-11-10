@@ -84,7 +84,7 @@ battleground-demo/
 
 ## Environment variables
 
-`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` — set as Vercel project env vars, never committed. `.env.example` documents the names. Local dev via `vercel dev` reads a local `.env`.
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` — set as Vercel project env vars, never committed. `FAKE_FIGHT=1` makes `/api/fight` skip all paid calls and return a fixed fake result (Fighter A wins, SVG placeholder art, ~1.5s delay) after the rate limit and input checks, for free UI testing. `.env.example` documents the names. Local dev via `vercel dev` reads a local `.env`.
 
 ## Full spec / plan
 
