@@ -35,13 +35,16 @@ Before using any library API (Anthropic SDK, OpenAI SDK, Vercel Functions), chec
 **Goal:** the whole fight flow works in the browser against the fake API.
 
 **Build:**
-- Two fighter inputs, a VS divider and a Fight button.
-- Client-side checks: both fighters filled in, 80 characters or less each.
-- A themed loading state with rotating flavor text.
-- A result view with both portraits, labels and the verdict text, plus a "Fight again" button.
-- An error view with a retry button that re-runs the same fight.
+- Four separate views in `index.html`, one page, never stacked on screen together:
+  - **Input form:** two fighter inputs, a VS divider and a Fight button.
+  - **Loading view:** a themed loading state with rotating flavor text.
+  - **Result view:** both portraits, labels and the verdict text, plus a "Fight again" button.
+  - **Error view:** an error message with a retry button that re-runs the same fight.
+- Toggle the views in JavaScript with the `hidden` attribute, so exactly one is visible at a time. On page load, only the input form is visible; the other three start with `hidden`.
+- Make sure no CSS `display` rule on a view overrides `hidden` (for example add `[hidden] { display: none !important; }`).
+- Client-side checks: both fighters filled in, 80 characters or less each. A failed check shows a message on the input form itself, not the error view.
 
-**Done when:** typing two fighters and clicking Fight shows the loading state, then the fake result, and empty or too-long inputs show an error without calling the API.
+**Done when:** on page load only the input form is visible; clicking Fight switches to the loading view, then the result view, with only one view on screen at each step; "Fight again" returns to the input form; and empty or too-long inputs show a message on the form without calling the API.
 
 ---
 
