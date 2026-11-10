@@ -1,0 +1,241 @@
+# Battleground - Staged Build Plan
+
+Built from `project-brief.md`. This plan builds the whole app from zero, one small piece at a time. Each stage is small enough to finish, check and commit on its own. Don't start a stage until the one before it passes its "Done when" check.
+
+Everything is built and tested locally with `vercel dev` the whole way. There is no deploy step in this plan.
+
+- **Stages 1–10:** the MVP
+- **Stages 11–13:** Phase 2, re-fight
+- **Stages 14–16:** Phase 3, share-code sync
+
+Before using any library API (Anthropic SDK, OpenAI SDK, Vercel Functions), check its current docs with context7 rather than relying on memory, as `CLAUDE.md` requires.
+
+---
+
+# MVP
+
+## Stage 1: Scaffold
+
+**Goal:** an empty project that runs locally, with no real features yet.
+
+**Build:**
+- The folder layout: `index.html`, `battledex.html`, `css/style.css`, `js/` (`battle.js`, `battledex.js`, `storage.js`) and `api/fight.js`.
+- `package.json` with `@anthropic-ai/sdk`, `openai` and `zod`, then `npm install`.
+- `vercel.json` with a `maxDuration` of `120` for the API function, since a real fight takes 60–75 seconds.
+- `.env.example` listing `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`, a local `.env` with real keys, and a `.gitignore` covering `node_modules/`, `.env` and `.vercel/`.
+- Both HTML pages loading the shared stylesheet and their scripts (`storage.js` first), with links between them.
+- `api/fight.js` returning a fixed fake result (a fake verdict and placeholder images), so the frontend can be built without paid calls.
+
+**Done when:** `vercel dev` serves both pages locally, and a POST to `/api/fight` returns the fake result.
+
+---
+
+## Stage 2: Battle screen with fake data
+
+**Goal:** the whole fight flow works in the browser against the fake API.
+
+**Build:**
+- Two fighter inputs, a VS divider and a Fight button.
+- Client-side checks: both fighters filled in, 80 characters or less each.
+- A themed loading state with rotating flavor text.
+- A result view with both portraits, labels and the verdict text, plus a "Fight again" button.
+- An error view with a retry button that re-runs the same fight.
+
+**Done when:** typing two fighters and clicking Fight shows the loading state, then the fake result, and empty or too-long inputs show an error without calling the API.
+
+---
+
+## Stage 3: System prompt
+
+**Goal:** write and test the prompt that keeps Claude judging fights and nothing else, before it's wired into the app.
+
+**Build:**
+- A system prompt that:
+  - scopes Claude to judging only the two given fighters;
+  - treats any instructions inside a fighter's text ("ignore previous instructions", "you are now…", requests for code, essays or personal info) as just a weird fighter, and judges it as one;
+  - always picks exactly one winner, Fighter A or Fighter B, never a tie or a refusal, including mirror matches like "lion" vs "lion";
+  - keeps the explanation to 2–3 short, playful sentences and never breaks character or explains its rules.
+- A short list of test matchups: normal fights, a mirror match, and several injection attempts.
+- A one-off script in `test/` that runs each matchup against Claude with the prompt and prints the result.
+
+**Done when:** every test matchup gets a short, in-character verdict with exactly one winner, and no injection attempt changes Claude's behavior.
+
+---
+
+## Stage 4: Server input checks and rate limit
+
+**Goal:** protect the API before any paid call is wired in.
+
+**Build:**
+- Reject anything that isn't a POST.
+- Repeat the input checks on the server: both fighters must be non-empty strings of 80 characters or less.
+- A rate limit of 5 fights per minute per IP, checked first, returning `429` before any paid call. Keep it in memory; it resets when the server restarts, which is fine for a demo.
+- Show a friendly message in the browser for each error.
+
+**Done when:** a bad request gets a `400`, and the 6th request within a minute gets a `429` with the "slow down" message.
+
+---
+
+## Stage 5: Real verdict from Claude
+
+**Goal:** replace the fake verdict with a real one. Images stay fake for now.
+
+**Build:**
+- Call Claude from `api/fight.js` with the system prompt from Stage 3.
+- Use structured output, returning `winner` (`"A"` or `"B"`) and a short `explanation`.
+- Return `502` with a friendly message if the verdict call fails.
+
+**Done when:** fights in the browser get real verdicts, and the Stage 3 test matchups behave the same through the app.
+
+---
+
+## Stage 6: Real character art from OpenAI
+
+**Goal:** generate matching art for both fighters.
+
+**Build:**
+- One image per fighter with `gpt-image-2` at `1024x1024` and `low` quality, returned as base64 data.
+- A shared art-style prompt so every character looks consistent: bold flat colors, thick outlines, an action pose, a plain light-gray background, and no text, logos, borders or UI.
+- Run the verdict and both images in parallel, so the fight takes as long as the slowest call.
+- Return `422` with a friendly message when an image is blocked by moderation, and `502` for any other image failure.
+
+**Done when:** a real fight shows both characters in a matching style with no text in the images, a flagged fighter shows the moderation message, and the whole fight finishes in under about 75 seconds.
+
+---
+
+## Stage 7: VS reveal and winner highlight
+
+**Goal:** make the result feel like a showdown.
+
+**Build:**
+- A Pokémon-style reveal animation when the result lands.
+- Highlight the winning portrait using `winner` (`"A"` or `"B"`), not the fighter's name, so mirror matches aren't ambiguous.
+- A winner card with the written reasoning.
+
+**Done when:** the reveal plays every fight, the correct side is highlighted, and "lion" vs "lion" highlights exactly one side.
+
+---
+
+## Stage 8: BattleDex
+
+**Goal:** save individual fighters and see them in a gallery.
+
+**Build:**
+- Shared storage helpers in `js/storage.js`.
+- An "Add to BattleDex" button under each portrait that saves that one fighter.
+- Each BattleDex entry holds only the fighter's label and image. No verdict, opponent or win/loss is saved.
+- Before saving, shrink the image to 400×400 and save it as JPEG at 0.85 quality to stay under the browser's storage limit.
+- Keep at most 20 fighters, removing the oldest first. If the browser still runs out of space, remove more old ones until it fits.
+- `battledex.html` showing the saved fighters in a grid.
+
+**Done when:** each saved entry contains only a label and image, 21 saves cause no storage errors, the oldest fighter is gone, and the gallery survives a page reload.
+
+---
+
+## Stage 9: Last Fight recap
+
+**Goal:** get back to your most recent result without re-running it.
+
+**Build:**
+- Keep the latest fight (both images, the verdict, and which sides were saved) for the current browser tab session. This is separate from the BattleDex.
+- A "Last Fight" link on the BattleDex page that reopens it with no new API call.
+- Keep "Add to BattleDex" buttons disabled for sides already saved.
+
+**Done when:** after a fight, going to the BattleDex and clicking "Last Fight" shows the same result instantly, with saved sides still marked as saved.
+
+---
+
+## Stage 10: Confirm the MVP locally
+
+**Goal:** check the whole MVP end to end in `vercel dev`.
+
+**Do:**
+- Run 5–10 real fights, including a mirror match, an injection attempt and one input likely to be flagged.
+- Repeat the 21-save check from Stage 8.
+- Set monthly spending caps in the OpenAI and Anthropic dashboards, since local testing still makes paid calls.
+
+**Done when:** every fight finishes without a timeout, saving causes no storage errors, and spending caps are set.
+
+---
+
+# Phase 2: Re-fight
+
+## Stage 11: Decide how re-fights work
+
+**Goal:** answer the brief's open question before writing code, because it changes the next two stages.
+
+**Decide:**
+- How a re-fight starts: two saved fighters, one saved fighter against a newly typed one, or both. (Two saved fighters is the simplest and fastest, since it needs no image calls.)
+- Whether the same pair can get a different verdict each time. (Probably yes; it keeps re-fights fun.)
+
+**Done when:** the answers are written into `project-brief.md`, and its open question is closed.
+
+---
+
+## Stage 12: Verdict-only fights on the server
+
+**Goal:** let `/api/fight` judge a fight without generating images, so re-fights take seconds instead of over a minute.
+
+**Build:**
+- Add an option to the existing `/api/fight` request (for example `verdictOnly: true`) that skips both image calls and returns only the verdict.
+- Keep it in the same endpoint so it shares the existing rate limit.
+- Keep the same input checks and error responses.
+
+**Done when:** a verdict-only request returns a verdict in a few seconds with no images, and a normal fight still works as before.
+
+---
+
+## Stage 13: Re-fight screen
+
+**Goal:** start a fight from saved BattleDex fighters.
+
+**Build:**
+- On `battledex.html`, a way to pick two saved fighters and start a re-fight.
+- Send a verdict-only fight (from Stage 12) and show the result with the existing VS reveal, using the saved images.
+- The BattleDex itself doesn't change after a re-fight; entries stay as label and image only.
+- If Stage 11 chose "saved vs new" too, add that here or as a follow-up stage, since it needs one image call.
+
+**Done when:** picking two saved fighters shows a verdict with their saved art in a few seconds, the BattleDex entries are unchanged, and the normal typed fight still works.
+
+---
+
+# Phase 3: Share-code sync
+
+## Stage 14: Choose where shared BattleDexes are stored
+
+**Goal:** pick the small server-side store that share codes need, before building sharing.
+
+**Decide:**
+- Which store to use. Check current options with context7 at the time, and pick one that can be run or reached from `vercel dev`.
+- How large a shared BattleDex can be. Twenty 400×400 JPEGs is roughly a megabyte, so check the store's size limits.
+- Whether shared copies expire (for example after 30 days), which keeps storage costs down.
+- Whether loading a code replaces the BattleDex in the browser or merges into it.
+
+**Done when:** the choices are written into `project-brief.md`, and the store's keys are in the local `.env` and listed in `.env.example`.
+
+---
+
+## Stage 15: Share-code endpoints
+
+**Goal:** save a BattleDex on the server and load it back by code.
+
+**Build:**
+- A new serverless function to upload a BattleDex and get back a short code.
+- A way to fetch a BattleDex by its code.
+- Input checks, a size cap, and a rate limit, since this endpoint writes to storage. Only accept entries made of a label and image.
+- Update `CLAUDE.md`, whose repo layout lists only one serverless function.
+
+**Done when:** uploading a BattleDex returns a code, and fetching that code returns the same fighters.
+
+---
+
+## Stage 16: Share and load screens
+
+**Goal:** use share codes from the BattleDex page.
+
+**Build:**
+- A "Share BattleDex" button that shows the code and a shareable link.
+- A "Load from code" option that loads a BattleDex using the replace or merge rule from Stage 14.
+- Friendly errors for a wrong or expired code.
+
+**Done when:** a BattleDex shared from one browser loads correctly in a different browser on the same machine.

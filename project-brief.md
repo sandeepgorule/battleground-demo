@@ -16,13 +16,15 @@ What's built today:
 - "Add to BattleDex" under each portrait; BattleDex gallery page (up to 20 characters, oldest removed first)
 - "Last Fight" recap that reopens your most recent result without re-running it
 
-**Done means:** fights finish reliably on the live Vercel deployment, and saving to the BattleDex works without storage errors.
+**Done means:** fights finish reliably when run locally with `vercel dev`, and saving to the BattleDex works without storage errors.
 
 ## 3. What are we building this with (tech stack)?
 HTML, CSS, and vanilla JS for the frontend. Vercel for hosting and a serverless function, which exists to keep the API keys off the browser. Claude's API for the verdict. OpenAI's image API for the character art. localStorage for saving the BattleDex.
 
+Everything is built and tested locally with `vercel dev`; deploying is not part of the current plan.
+
 ## 4. What's the long-term vision, beyond just the MVP?
-**Phase 2: Re-fight and records.** Start a quick re-fight using characters already saved in the BattleDex instead of typing two new ones every time. Saved characters already have art, so a re-fight between two of them only needs the verdict call, which takes seconds instead of over a minute. Each saved character would track its win/loss record, which means the BattleDex stores more than just a name and image.
+**Phase 2: Re-fight.** Start a quick re-fight using fighters already saved in the BattleDex instead of typing two new ones every time. Saved fighters already have art, so a re-fight between two of them only needs the verdict call, which takes seconds instead of over a minute. Re-fights don't change the BattleDex.
 
 **Phase 3: Share-code sync.** Load your BattleDex on another device with a share code or link, without building login. This needs a small server-side store for each shared BattleDex.
 
@@ -30,6 +32,7 @@ HTML, CSS, and vanilla JS for the frontend. Vercel for hosting and a serverless 
 - **Rate limiting**: 5 fights per minute per IP, checked before any paid API call. Kept in memory, so it resets when the server restarts.
 - **Verdict format**: winner card with animation, plus written reasoning for the win.
 - **Character art**: one image per side. Group inputs (e.g. "10 cows vs 10 lions") still get one image per side, not one per unit.
+- **BattleDex entries**: one individual fighter each, holding only its label and image. No verdict, opponent or win/loss record is saved.
 - **Image storage**: images downsized/compressed client-side (canvas resize to 400x400 + JPEG at 0.85 quality) before saving to localStorage, to stay under browser storage quota.
 
 ## 6. Constraints and risks
@@ -40,7 +43,9 @@ HTML, CSS, and vanilla JS for the frontend. Vercel for hosting and a serverless 
 ## 7. What it deliberately won't do (for now)
 - No accounts or login
 - No ties: every fight has exactly one winner
+- No win/loss records: the BattleDex saves fighters, not fight results
+- No deployment for now: built and tested locally only
 - Quantities like "10 lions" aren't counted exactly; they're passed through to the AI as written
 
 ## Open questions
-- How does a re-fight start: two saved characters, one saved character against a newly typed one, or both?
+- How does a re-fight start: two saved fighters, one saved fighter against a newly typed one, or both?
