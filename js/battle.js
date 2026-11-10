@@ -12,7 +12,6 @@ const LOADING_MESSAGES = [
 ];
 
 const ERROR_MESSAGES = {
-  rate_limited: "Whoa, slow down champ — catch your breath and try again in a bit.",
   invalid_input: 'Give both fighters a name (80 characters or less).',
   verdict_failed: "The judges couldn't reach a decision. Try again?",
   moderation_blocked: 'One of those fighters got flagged by the content police. Try a different description.',

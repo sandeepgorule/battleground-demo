@@ -1,6 +1,7 @@
 const BATTLEDEX_STORAGE_KEY = 'battledex';
 const BATTLEDEX_MAX_ENTRIES = 20;
 const BATTLEDEX_IMAGE_MAX_DIM = 400;
+const BATTLEDEX_IMAGE_QUALITY = 0.85;
 
 function resizeImageDataUrl(dataUrl, maxDim) {
   return new Promise((resolve, reject) => {
@@ -10,7 +11,10 @@ function resizeImageDataUrl(dataUrl, maxDim) {
       canvas.width = maxDim;
       canvas.height = maxDim;
       canvas.getContext('2d').drawImage(img, 0, 0, maxDim, maxDim);
-      resolve(canvas.toDataURL('image/png'));
+      // JPEG over PNG: much smaller, and the art has a solid background so no
+      // transparency is lost. Not WebP — canvas WebP encoding isn't supported in
+      // every browser (Safari silently falls back to PNG).
+      resolve(canvas.toDataURL('image/jpeg', BATTLEDEX_IMAGE_QUALITY));
     };
     img.onerror = reject;
     img.src = dataUrl;
