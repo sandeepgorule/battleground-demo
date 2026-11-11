@@ -60,8 +60,12 @@ Before using any library API (Anthropic SDK, OpenAI SDK, Vercel Functions), chec
   - keeps the explanation to 2–3 short, playful sentences and never breaks character or explains its rules.
 - A short list of test matchups: normal fights, a mirror match, and several injection attempts.
 - A one-off script in `test/` that runs each matchup against Claude with the prompt and prints the result.
+- A shared art-style template that every generated image must follow, with the fighter's text placed in front of it:
+  > Bold flat-color illustration, thick black outlines, dynamic action pose, dramatic lighting, video game character art style. Keep it centered, filling most of the frame, isolated on a plain solid light grey background with no scenery. Absolutely no text, words, letters, numbers, logos, watermarks, UI elements, borders, or frames of any kind. Illustration only, nothing else on canvas.
+- Group inputs (for example "10 cows") still produce exactly one image for that side, showing the whole group in a single illustration. This is handled in the prompt sent to the image API, not by looping over the count or making one image call per member.
+- `moderation_blocked` as its own error case, separate from a generic image failure (`image_failed`), each with its own status and friendly message.
 
-**Done when:** every test matchup gets a short, in-character verdict with exactly one winner, and no injection attempt changes Claude's behavior.
+**Done when:** every test matchup gets a short, in-character verdict with exactly one winner, no injection attempt changes Claude's behavior, the art-style template is written down in one shared place, the image prompt covers group inputs so each side still gets one image, and `moderation_blocked` and `image_failed` are defined as separate error cases.
 
 ---
 
