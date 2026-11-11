@@ -36,6 +36,8 @@ battleground-demo/
 │   ├── battledex.js      # battledex.html logic
 │   └── storage.js        # shared localStorage helpers
 ├── api/fight.js          # the one serverless function
+├── lib/judge.js          # judge system prompt, VerdictSchema, judgeFight() (shared by api + test)
+├── test/judge-prompt.js  # one-off prompt check: `node --env-file=.env test/judge-prompt.js` (paid calls)
 ├── vercel.json
 ├── package.json
 └── .env.example
