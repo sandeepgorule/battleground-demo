@@ -9,7 +9,7 @@ A web app where you type in two fighters and get an AI-generated verdict on who'
 Two text inputs, a Fight button, a working verdict with art, a loading state while we wait on the API, and a basic BattleDex saved to localStorage. Type two fighters, get a real result, save it if you want.
 
 What's built today:
-- Fighter inputs (free text, up to 80 characters each) and a Fight button
+- Fighter inputs (free text, up to 50 characters each) and a Fight button
 - Themed loading state with rotating flavor text
 - Pokémon-style VS reveal with the winning portrait highlighted
 - AI verdict that always picks a winner (no ties), plus matching character art for both fighters

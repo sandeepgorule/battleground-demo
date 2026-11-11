@@ -6,7 +6,7 @@ const { generateFighterImage, isModerationBlocked } = require('../lib/art');
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const MAX_FIGHTER_LENGTH = 80;
+const MAX_FIGHTER_LENGTH = 50;
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
@@ -53,20 +53,17 @@ module.exports = async (request, response) => {
 
   const ip = (request.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
   if (!isAllowed(ip)) {
-    response.status(429).json({ error: 'rate_limited', message: "Whoa, slow down champ — catch your breath and try again in a bit." });
+    response.status(429).json({ error: 'rate_limited', message: "Easy there, champ! The arena allows five fights a minute, and you've hit the bell. Catch your breath and step back in shortly." });
     return;
   }
 
   const { fighterA, fighterB } = request.body || {};
-  if (
-    typeof fighterA !== 'string' ||
-    typeof fighterB !== 'string' ||
-    !fighterA.trim() ||
-    !fighterB.trim() ||
-    fighterA.length > MAX_FIGHTER_LENGTH ||
-    fighterB.length > MAX_FIGHTER_LENGTH
-  ) {
-    response.status(400).json({ error: 'invalid_input', message: 'Give both fighters a name (80 characters or less).' });
+  if (typeof fighterA !== 'string' || typeof fighterB !== 'string' || !fighterA.trim() || !fighterB.trim()) {
+    response.status(400).json({ error: 'missing_fighter', message: "Both corners need a fighter before the bell rings!" });
+    return;
+  }
+  if (fighterA.length > MAX_FIGHTER_LENGTH || fighterB.length > MAX_FIGHTER_LENGTH) {
+    response.status(400).json({ error: 'fighter_too_long', message: "That's the limit, champ! Fighter names max out at 50 characters so they fit on the fight poster." });
     return;
   }
 
@@ -83,18 +80,18 @@ module.exports = async (request, response) => {
 
   if (verdictResult.status === 'rejected') {
     console.error('Verdict call failed:', verdictResult.reason);
-    response.status(502).json({ error: 'verdict_failed', message: "The judges couldn't reach a decision. Try again?" });
+    response.status(502).json({ error: 'verdict_failed', message: "The judges stormed out of the arena mid-match! No ruling this round. Hit Try Again to drag them back." });
     return;
   }
 
   const imageErrors = [imageAResult, imageBResult].filter((r) => r.status === 'rejected').map((r) => r.reason);
   if (imageErrors.some(isModerationBlocked)) {
-    response.status(422).json({ error: 'moderation_blocked', message: 'One of those fighters got flagged by the content police. Try a different description.' });
+    response.status(422).json({ error: 'moderation_blocked', message: "Red card! The ring officials won't let one of those fighters through the gates. Send in a different contender." });
     return;
   }
   if (imageErrors.length) {
     console.error('Image call failed:', imageErrors[0]);
-    response.status(502).json({ error: 'image_failed', message: "The artist's pencil broke. Try again?" });
+    response.status(502).json({ error: 'image_failed', message: "Our ringside artist fainted before finishing the portraits! Run it back and we'll get them a fresh sketchpad." });
     return;
   }
 

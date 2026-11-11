@@ -1,6 +1,10 @@
 const dexGrid = document.getElementById('dexGrid');
 const dexEmpty = document.getElementById('dexEmpty');
 const lastFightLink = document.getElementById('lastFightLink');
+const clearDexButton = document.getElementById('clearDexButton');
+
+const CLEAR_CONFIRM_MS = 3000;
+let clearConfirmTimeoutId = null;
 
 lastFightLink.hidden = !getLastFight();
 
@@ -10,10 +14,12 @@ function renderBattledex() {
   if (dex.length === 0) {
     dexEmpty.hidden = false;
     dexGrid.hidden = true;
+    clearDexButton.hidden = true;
     return;
   }
 
   dexEmpty.hidden = true;
+  clearDexButton.hidden = false;
   dexGrid.hidden = false;
   dexGrid.innerHTML = '';
 
@@ -30,10 +36,41 @@ function renderBattledex() {
     label.className = 'dex-card__label';
     label.textContent = entry.label;
 
+    const remove = document.createElement('button');
+    remove.className = 'dex-card__remove';
+    remove.type = 'button';
+    remove.textContent = '×';
+    remove.setAttribute('aria-label', `Remove ${entry.label} from BattleDex`);
+    remove.addEventListener('click', () => {
+      deleteFromBattledex(entry.id);
+      renderBattledex();
+    });
+
+    card.appendChild(remove);
     card.appendChild(img);
     card.appendChild(label);
     dexGrid.appendChild(card);
   });
 }
+
+function resetClearButton() {
+  clearTimeout(clearConfirmTimeoutId);
+  clearConfirmTimeoutId = null;
+  clearDexButton.classList.remove('is-confirming');
+  clearDexButton.textContent = 'Clear All';
+}
+
+// Two-tap confirm instead of confirm(), which would block the page.
+clearDexButton.addEventListener('click', () => {
+  if (!clearConfirmTimeoutId) {
+    clearDexButton.classList.add('is-confirming');
+    clearDexButton.textContent = 'Tap again to clear';
+    clearConfirmTimeoutId = setTimeout(resetClearButton, CLEAR_CONFIRM_MS);
+    return;
+  }
+  resetClearButton();
+  clearBattledex();
+  renderBattledex();
+});
 
 renderBattledex();

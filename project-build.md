@@ -42,7 +42,7 @@ Before using any library API (Anthropic SDK, OpenAI SDK, Vercel Functions), chec
   - **Error view:** an error message with a retry button that re-runs the same fight.
 - Toggle the views in JavaScript with the `hidden` attribute, so exactly one is visible at a time. On page load, only the input form is visible; the other three start with `hidden`.
 - Make sure no CSS `display` rule on a view overrides `hidden` (for example add `[hidden] { display: none !important; }`).
-- Client-side checks: both fighters filled in, 80 characters or less each. A failed check shows a message on the input form itself, not the error view.
+- Client-side checks: both fighters filled in, 50 characters or less each. A failed check shows a message on the input form itself, not the error view.
 
 **Done when:** on page load only the input form is visible; clicking Fight switches to the loading view, then the result view, with only one view on screen at each step; "Fight again" returns to the input form; and empty or too-long inputs show a message on the form without calling the API.
 
@@ -65,7 +65,7 @@ Before using any library API (Anthropic SDK, OpenAI SDK, Vercel Functions), chec
 - Group inputs (for example "10 cows") still produce exactly one image for that side, showing the whole group in a single illustration. This is handled in the prompt sent to the image API, not by looping over the count or making one image call per member.
 - `moderation_blocked` as its own error case, separate from a generic image failure (`image_failed`), each with its own status and friendly message.
 - `api/fight.js` wired to the Fight button:
-  - rejects anything that isn't a POST, and repeats the input checks on the server (both fighters non-empty strings of 80 characters or less, otherwise `400`);
+  - rejects anything that isn't a POST, and repeats the input checks on the server (both fighters non-empty strings of 50 characters or less, otherwise `400`);
   - a rate limit of 5 fights per minute per IP, checked first, returning `429` before any paid call. Kept in memory; it resets when the server restarts, which is fine for a demo;
   - calls Claude with the system prompt, using native structured output with a Zod schema for `winner` (`"A"` or `"B"`) and `explanation`;
   - one image per fighter with `gpt-image-2` at `1024x1024` and `low` quality, returned as base64 data;

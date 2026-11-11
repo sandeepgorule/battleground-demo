@@ -44,10 +44,10 @@ battleground-demo/
 ## Logic breakdown
 
 1. User types two fighter strings (free text, quantities like "10 lions" are just part of the string, no separate field), clicks Fight.
-2. Client validates non-empty, ≤80 chars each, shows on-theme loading animation (rotating flavor text + progress indicator), `fetch POST /api/fight` with `{ fighterA, fighterB }`.
+2. Client validates non-empty, ≤50 chars each (inputs also have `maxlength="50"`, with the too-long message shown as soon as an input hits the limit), shows on-theme loading animation (rotating flavor text + progress indicator), `fetch POST /api/fight` with `{ fighterA, fighterB }`.
 3. `api/fight.js`:
    - Rate limit check first: in-memory `Map` keyed by `x-forwarded-for` IP, 5 requests/60s. Over limit → `429 { error: 'rate_limited' }`, no paid API calls made.
-   - Validates input server-side too (never trust client).
+   - Validates input server-side too (never trust client): empty/non-string → `400 { error: 'missing_fighter' }`, over 50 chars → `400 { error: 'fighter_too_long' }`.
    - Fires Codex verdict call + both OpenAI image calls in **parallel** via `Promise.allSettled` (not `.all` — one failure shouldn't necessarily kill the others, though current logic still surfaces an error if the verdict or either image fails).
    - Verdict failure → `502 { error: 'verdict_failed' }`.
    - Image failure → checks `error.code === 'moderation_blocked'` to distinguish `422 { error: 'moderation_blocked' }` from generic `502 { error: 'image_failed' }`.
@@ -79,7 +79,7 @@ battleground-demo/
 - **Rate limiting is in-memory and resets on cold start.** Known limitation, acceptable for a demo (see `ponytail:` comment in `api/fight.js`). It's per instance too, so it slows a single visitor down but doesn't cap total spend.
 - **Retry = re-run the whole fight from scratch.** No partial-failure state tracking (no separate "just retry the image that failed" logic).
 - **BattleDex has no outcome tracking** — just image + fighter label, capped collection with oldest-eviction, images downscaled to 400x400 before storage to stay well under localStorage quota. `saveToBattledex` also self-heals on `QuotaExceededError` by evicting further even below the 20-cap, in case a browser's real quota is unusually tight.
-- **Client and server duplicate some constants**: `MAX_FIGHTER_LENGTH` (80) and the user-facing error messages exist both in `api/fight.js` and `js/battle.js` (`ERROR_MESSAGES`, keyed by the server's `error` codes). Change both together. The client also has its own codes (`network_failed`, `bad_response`) for failures that never reach a JSON response, e.g. a platform timeout returning HTML.
+- **Client and server duplicate some constants**: `MAX_FIGHTER_LENGTH` (50) and the user-facing error messages exist both in `api/fight.js` and `js/battle.js` (`ERROR_MESSAGES`, keyed by the server's `error` codes). Change both together. The client also has its own codes (`network_failed`, `bad_response`) for failures that never reach a JSON response, e.g. a platform timeout returning HTML.
 - **Always check context7 before writing/using any library API in this project** (Anthropic SDK, OpenAI SDK, Vercel Functions conventions, etc.) — don't rely on training-data memory of these APIs, they move fast and this project intentionally tracks current model/param names (e.g. `gpt-image-2`, `messages.parse`).
 
 ## Environment variables

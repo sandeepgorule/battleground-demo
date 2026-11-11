@@ -127,6 +127,13 @@ input {
   text-shadow: none;
 }
 
+.hud__nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 .hud__link {
   font-family: var(--font-mono);
   font-size: 0.8rem;
@@ -687,14 +694,44 @@ input {
   padding: 1rem clamp(1.25rem, 6vw, 5rem) 4rem;
 }
 
+.dex__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
 .dex__title {
-  margin: 0 0 2rem;
+  margin: 0;
   font-family: var(--font-display);
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--paper);
   text-shadow: 3px 3px 0 var(--outline);
+}
+
+.dex__clear {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--paper);
+  background: transparent;
+  border: 2px solid var(--red);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dex__clear:hover,
+.dex__clear:focus-visible,
+.dex__clear.is-confirming {
+  background: var(--red);
+  color: var(--outline);
 }
 
 .dex__empty {
@@ -725,6 +762,7 @@ input {
 }
 
 .dex-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -743,6 +781,31 @@ input {
   border-radius: 10px;
   border: 3px solid var(--outline);
   background: var(--ink-deep);
+}
+
+.dex-card__remove {
+  position: absolute;
+  top: -0.6rem;
+  right: -0.6rem;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-body);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--paper);
+  background: var(--red);
+  border: 3px solid var(--outline);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.dex-card__remove:hover,
+.dex-card__remove:focus-visible {
+  transform: scale(1.12);
 }
 
 .dex-card__label {

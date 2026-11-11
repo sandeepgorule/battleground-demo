@@ -20,12 +20,17 @@
 
     <header class="hud">
       <a class="hud__logo" href="index.html">Battle<span class="hud__logo-sword">&#9876;&#65039;</span>ground</a>
-      <a class="hud__link" href="index.html">New Fight</a>
-      <a id="lastFightLink" class="hud__link" href="index.html?recap=1" hidden>Last Fight</a>
+      <nav class="hud__nav">
+        <a id="lastFightLink" class="hud__link" href="index.html?recap=1" hidden>Back to Last Fight</a>
+        <a class="hud__link" href="index.html">New Fight</a>
+      </nav>
     </header>
 
     <main class="dex">
-      <h1 class="dex__title">My BattleDex</h1>
+      <div class="dex__header">
+        <h1 class="dex__title">My BattleDex</h1>
+        <button id="clearDexButton" class="dex__clear" type="button" hidden>Clear All</button>
+      </div>
 
       <div id="dexEmpty" class="dex__empty" hidden>
         <p>No fighters saved yet. Win or lose, save your favorites after a fight.</p>
