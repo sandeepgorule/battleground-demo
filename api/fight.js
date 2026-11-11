@@ -1,7 +1,10 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 const { judgeFight } = require('../lib/judge');
+const { generateFighterImage, isModerationBlocked } = require('../lib/art');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const MAX_FIGHTER_LENGTH = 80;
 const RATE_LIMIT_MAX = 5;
@@ -23,27 +26,22 @@ function isAllowed(ip) {
   return true;
 }
 
-// Placeholder art until Stage 6 wires in real image generation. Used by both
-// the real verdict path and fake mode, so the result view always has images.
+// Fake mode (FAKE_FIGHT=1): returns a fixed result with placeholder art and no
+// paid API calls, so the UI can be tested for free. The short delay keeps the
+// loading view on screen long enough to see.
+const FAKE_FIGHT_DELAY_MS = 1500;
+
 function placeholderImage(letter, color) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="100%" height="100%" fill="${color}"/><text x="50%" y="50%" font-family="sans-serif" font-size="480" fill="#fff" text-anchor="middle" dominant-baseline="central">${letter}</text></svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
-const PLACEHOLDER_A = placeholderImage('A', '#d64545');
-const PLACEHOLDER_B = placeholderImage('B', '#3b6fd6');
-
-// Fake mode (FAKE_FIGHT=1): returns a fixed result with no paid API calls, so
-// the UI can be tested for free. The short delay keeps the loading view on
-// screen long enough to see.
-const FAKE_FIGHT_DELAY_MS = 1500;
-
 async function getFakeFight() {
   await new Promise((resolve) => setTimeout(resolve, FAKE_FIGHT_DELAY_MS));
   return {
     verdict: { winner: 'A', explanation: 'Fake mode: Fighter A wins by default. No AI was harmed in this fight.' },
-    imageA: PLACEHOLDER_A,
-    imageB: PLACEHOLDER_B,
+    imageA: placeholderImage('A', '#d64545'),
+    imageB: placeholderImage('B', '#3b6fd6'),
   };
 }
 
@@ -77,14 +75,32 @@ module.exports = async (request, response) => {
     return;
   }
 
-  let verdict;
-  try {
-    verdict = await judgeFight(anthropic, fighterA, fighterB);
-  } catch (error) {
-    console.error('Verdict call failed:', error);
+  const [verdictResult, imageAResult, imageBResult] = await Promise.allSettled([
+    judgeFight(anthropic, fighterA, fighterB),
+    generateFighterImage(openai, fighterA),
+    generateFighterImage(openai, fighterB),
+  ]);
+
+  if (verdictResult.status === 'rejected') {
+    console.error('Verdict call failed:', verdictResult.reason);
     response.status(502).json({ error: 'verdict_failed', message: "The judges couldn't reach a decision. Try again?" });
     return;
   }
 
-  response.status(200).json({ verdict, imageA: PLACEHOLDER_A, imageB: PLACEHOLDER_B });
+  const imageErrors = [imageAResult, imageBResult].filter((r) => r.status === 'rejected').map((r) => r.reason);
+  if (imageErrors.some(isModerationBlocked)) {
+    response.status(422).json({ error: 'moderation_blocked', message: 'One of those fighters got flagged by the content police. Try a different description.' });
+    return;
+  }
+  if (imageErrors.length) {
+    console.error('Image call failed:', imageErrors[0]);
+    response.status(502).json({ error: 'image_failed', message: "The artist's pencil broke. Try again?" });
+    return;
+  }
+
+  response.status(200).json({
+    verdict: verdictResult.value,
+    imageA: imageAResult.value,
+    imageB: imageBResult.value,
+  });
 };
