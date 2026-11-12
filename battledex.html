@@ -15,30 +15,36 @@
 </head>
 <body>
   <div class="arena arena--dex">
-    <div class="arena__side arena__side--a" aria-hidden="true"></div>
-    <div class="arena__side arena__side--b" aria-hidden="true"></div>
-
     <header class="hud">
       <a class="hud__logo" href="index.html">Battle<span class="hud__logo-sword">&#9876;&#65039;</span>ground</a>
-      <nav class="hud__nav">
-        <a id="lastFightLink" class="hud__link" href="index.html?recap=1" hidden>Back to Last Fight</a>
-        <a class="hud__link" href="index.html">New Fight</a>
-      </nav>
+      <a class="hud__link" href="index.html">New Fight</a>
     </header>
 
     <main class="dex">
       <div class="dex__header">
-        <h1 class="dex__title">My BattleDex</h1>
-        <button id="clearDexButton" class="dex__clear" type="button" hidden>Clear All</button>
+        <div class="dex__heading">
+          <h1 class="dex__title">My BattleDex</h1>
+          <div id="dexMeta" class="dex__meta" hidden>
+            <span id="dexCount" class="dex__count"></span>
+            <span class="dex__note">Oldest fighter drops out when the roster is full.</span>
+          </div>
+        </div>
+        <div class="dex__actions">
+          <a id="lastFightLink" class="ghost-button" href="index.html?recap=1" hidden>Back to Last Fight</a>
+          <button id="clearDexButton" class="ghost-button ghost-button--danger" type="button" hidden>Clear All</button>
+        </div>
       </div>
 
       <div id="dexEmpty" class="dex__empty" hidden>
+        <span class="dex__empty-title">Roster empty</span>
         <p>No fighters saved yet. Win or lose, save your favorites after a fight.</p>
-        <a class="fight-again-button" href="index.html">Start a Fight</a>
+        <a class="big-button big-button--small" href="index.html">Start a Fight</a>
       </div>
 
       <div id="dexGrid" class="dex__grid"></div>
     </main>
+
+    <div class="scanlines" aria-hidden="true"></div>
   </div>
 
   <script src="js/storage.js"></script>

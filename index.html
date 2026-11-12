@@ -14,94 +14,172 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="arena">
+  <div class="arena" data-view="form">
     <div class="arena__side arena__side--a" aria-hidden="true"></div>
     <div class="arena__side arena__side--b" aria-hidden="true"></div>
+    <span class="arena__letter arena__letter--a" aria-hidden="true">A</span>
+    <span class="arena__letter arena__letter--b" aria-hidden="true">B</span>
 
     <header class="hud">
       <span class="hud__logo">Battle<span class="hud__logo-sword">&#9876;&#65039;</span>ground</span>
-      <a class="hud__link" href="battledex.html">My BattleDex</a>
+      <a class="hud__link" href="battledex.html"><span class="hud__link-my">My </span>BattleDex</a>
     </header>
 
-    <main class="ring">
-      <section class="fighter-slot fighter-slot--a">
-        <span class="fighter-slot__eyebrow">Fighter A</span>
-        <input
-          id="fighterA"
-          class="fighter-slot__input"
-          type="text"
-          maxlength="50"
-          autocomplete="off"
-          placeholder="Type a fighter… (try '10 lions')"
-        />
-      </section>
-
-      <div class="seam">
-        <button id="fightButton" class="fight-button" type="button">
-          <span class="fight-button__vs">VS</span>
-          <span class="fight-button__label">Fight!</span>
-        </button>
+    <section class="ring">
+      <div class="hero">
+        <h1 class="hero__title">Who would<br class="hero__break" /> win?</h1>
+        <p class="hero__tagline">Type two fighters. Anything. Find out who wins.</p>
       </div>
 
-      <section class="fighter-slot fighter-slot--b">
-        <span class="fighter-slot__eyebrow">Fighter B</span>
-        <input
-          id="fighterB"
-          class="fighter-slot__input"
-          type="text"
-          maxlength="50"
-          autocomplete="off"
-          placeholder="Type a fighter… (try 'an old wizard')"
-        />
-      </section>
-    </main>
+      <div class="ring__grid">
+        <section class="fighter-slot fighter-slot--a">
+          <div class="fighter-slot__head">
+            <span class="player-tag player-tag--a">P1</span>
+            <label class="fighter-slot__eyebrow" for="fighterA">Fighter A · Red corner</label>
+          </div>
+          <input
+            id="fighterA"
+            class="fighter-slot__input"
+            type="text"
+            maxlength="50"
+            autocomplete="off"
+            placeholder="10 lions"
+          />
+          <span id="counterA" class="fighter-slot__counter">0 / 50</span>
+        </section>
 
-    <p id="formError" class="form-error" role="alert" hidden></p>
+        <div class="seam">
+          <button id="fightButton" class="fight-button" type="button">
+            <span class="fight-button__vs">VS</span>
+            <span class="fight-button__label">Fight!</span>
+          </button>
+        </div>
+
+        <section class="fighter-slot fighter-slot--b">
+          <div class="fighter-slot__head">
+            <span class="player-tag player-tag--b">P2</span>
+            <label class="fighter-slot__eyebrow" for="fighterB">Fighter B · Blue corner</label>
+          </div>
+          <input
+            id="fighterB"
+            class="fighter-slot__input"
+            type="text"
+            maxlength="50"
+            autocomplete="off"
+            placeholder="an old wizard"
+          />
+          <span id="counterB" class="fighter-slot__counter">0 / 50</span>
+        </section>
+      </div>
+
+      <p id="formError" class="form-error" role="alert" hidden></p>
+    </section>
 
     <section id="loadingView" class="loading-view" hidden>
-      <div class="loading-view__spinner" aria-hidden="true">
-        <span class="loading-view__spinner-vs">VS</span>
+      <div class="tale">
+        <div class="tale__side tale__side--a">
+          <div class="tale__name">
+            <span class="tale__tag tale__tag--a">P1</span>
+            <span id="loadingNameA" class="tale__label"></span>
+          </div>
+          <div class="tale__bar"><div class="tale__fill"></div></div>
+        </div>
+        <div class="tale__vs" aria-hidden="true">VS</div>
+        <div class="tale__side tale__side--b">
+          <div class="tale__name">
+            <span id="loadingNameB" class="tale__label"></span>
+            <span class="tale__tag tale__tag--b">P2</span>
+          </div>
+          <div class="tale__bar"><div class="tale__fill"></div></div>
+        </div>
       </div>
-      <p id="loadingMessage" class="loading-view__message">Sharpening claws…</p>
-      <div class="loading-view__bar">
-        <div class="loading-view__bar-fill"></div>
+
+      <div class="loading-view__stage">
+        <div class="sketch sketch--a" aria-hidden="true">
+          <span class="sketch__mark">?</span>
+          <div class="sketch__scan"></div>
+          <span class="sketch__note">Sketching portrait…</span>
+        </div>
+        <div class="loading-view__title">
+          <span class="round-tag">Round 1</span>
+          <span class="get-ready">Get<br class="get-ready__break" /> ready!</span>
+        </div>
+        <div class="sketch sketch--b" aria-hidden="true">
+          <span class="sketch__mark">?</span>
+          <div class="sketch__scan"></div>
+          <span class="sketch__note">Sketching portrait…</span>
+        </div>
+      </div>
+
+      <div class="loading-view__status">
+        <div class="terminal">
+          <span class="terminal__prompt" aria-hidden="true">&#9654;</span>
+          <span id="loadingMessage" class="terminal__message" aria-live="polite">Sharpening claws…</span>
+          <span class="terminal__cursor" aria-hidden="true"></span>
+        </div>
+        <div id="loadingMeter" class="meter" aria-hidden="true"></div>
+        <p class="loading-view__hint">A fight takes about a minute. Most of that is the portraits being drawn.</p>
       </div>
     </section>
 
     <section id="resultView" class="result-view" hidden>
+      <h1 id="resultHeadline" class="result-view__headline"></h1>
+
       <div class="result-view__portraits">
         <div id="portraitA" class="portrait-card portrait-card--a">
-          <span class="portrait-card__winner-badge">Winner!</span>
-          <div class="portrait-card__image-wrap">
-            <img id="portraitImageA" class="portrait-card__image" alt="" />
+          <div class="portrait-card__rays" aria-hidden="true"></div>
+          <div class="portrait-card__aura" aria-hidden="true"></div>
+          <div class="portrait-card__body">
+            <span class="portrait-card__ribbon">&#9733; Winner &#9733;</span>
+            <span class="portrait-card__tag">Fighter A</span>
+            <div class="portrait-card__image-wrap">
+              <img id="portraitImageA" class="portrait-card__image" alt="" />
+              <div class="portrait-card__shimmer" aria-hidden="true"></div>
+              <span class="portrait-card__ko" aria-hidden="true">K.O.</span>
+            </div>
+            <span id="portraitLabelA" class="portrait-card__label"></span>
+            <button class="portrait-card__save" type="button" data-save="A">Add to BattleDex</button>
           </div>
-          <span id="portraitLabelA" class="portrait-card__label"></span>
-          <button class="portrait-card__save" type="button" data-save="A">Add to BattleDex</button>
         </div>
 
         <span class="result-view__vs" aria-hidden="true">VS</span>
 
         <div id="portraitB" class="portrait-card portrait-card--b">
-          <span class="portrait-card__winner-badge">Winner!</span>
-          <div class="portrait-card__image-wrap">
-            <img id="portraitImageB" class="portrait-card__image" alt="" />
+          <div class="portrait-card__rays" aria-hidden="true"></div>
+          <div class="portrait-card__aura" aria-hidden="true"></div>
+          <div class="portrait-card__body">
+            <span class="portrait-card__ribbon">&#9733; Winner &#9733;</span>
+            <span class="portrait-card__tag">Fighter B</span>
+            <div class="portrait-card__image-wrap">
+              <img id="portraitImageB" class="portrait-card__image" alt="" />
+              <div class="portrait-card__shimmer" aria-hidden="true"></div>
+              <span class="portrait-card__ko" aria-hidden="true">K.O.</span>
+            </div>
+            <span id="portraitLabelB" class="portrait-card__label"></span>
+            <button class="portrait-card__save" type="button" data-save="B">Add to BattleDex</button>
           </div>
-          <span id="portraitLabelB" class="portrait-card__label"></span>
-          <button class="portrait-card__save" type="button" data-save="B">Add to BattleDex</button>
         </div>
       </div>
 
-      <div class="verdict-card">
-        <p id="verdictText" class="verdict-card__text"></p>
+      <div class="result-view__footer">
+        <div class="verdict-card">
+          <span class="verdict-card__label">The judge rules</span>
+          <p id="verdictText" class="verdict-card__text"></p>
+        </div>
+        <button id="fightAgainButton" class="big-button" type="button">Fight Again</button>
       </div>
-
-      <button id="fightAgainButton" class="fight-again-button" type="button">Fight Again</button>
     </section>
 
     <section id="errorView" class="error-view" hidden>
-      <p id="errorMessage" class="error-view__message"></p>
-      <button id="retryButton" class="error-view__retry" type="button">Try Again</button>
+      <h1 class="error-view__title">Time out!</h1>
+      <div class="verdict-card verdict-card--error">
+        <span class="verdict-card__label">Ref's call</span>
+        <p id="errorMessage" class="verdict-card__text"></p>
+      </div>
+      <button id="retryButton" class="big-button" type="button">Try Again</button>
     </section>
+
+    <div class="scanlines" aria-hidden="true"></div>
   </div>
 
   <script src="js/storage.js"></script>

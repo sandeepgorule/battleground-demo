@@ -2,6 +2,8 @@ const dexGrid = document.getElementById('dexGrid');
 const dexEmpty = document.getElementById('dexEmpty');
 const lastFightLink = document.getElementById('lastFightLink');
 const clearDexButton = document.getElementById('clearDexButton');
+const dexMeta = document.getElementById('dexMeta');
+const dexCount = document.getElementById('dexCount');
 
 const CLEAR_CONFIRM_MS = 3000;
 let clearConfirmTimeoutId = null;
@@ -15,17 +17,24 @@ function renderBattledex() {
     dexEmpty.hidden = false;
     dexGrid.hidden = true;
     clearDexButton.hidden = true;
+    dexMeta.hidden = true;
     return;
   }
 
   dexEmpty.hidden = true;
+  dexMeta.hidden = false;
+  dexCount.textContent = `${dex.length} / ${BATTLEDEX_MAX_ENTRIES}`;
   clearDexButton.hidden = false;
   dexGrid.hidden = false;
   dexGrid.innerHTML = '';
 
-  dex.forEach((entry) => {
+  dex.forEach((entry, i) => {
     const card = document.createElement('div');
     card.className = 'dex-card';
+
+    const num = document.createElement('span');
+    num.className = 'dex-card__num';
+    num.textContent = `#${String(i + 1).padStart(2, '0')}`;
 
     const img = document.createElement('img');
     img.className = 'dex-card__image';
@@ -46,6 +55,7 @@ function renderBattledex() {
       renderBattledex();
     });
 
+    card.appendChild(num);
     card.appendChild(remove);
     card.appendChild(img);
     card.appendChild(label);
